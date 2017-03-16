@@ -1,0 +1,92 @@
+###验证##########################################################################################################
+
+#oracle向hbase插入数据(单个列==>行键)
+sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 1 --table test --columns id,name,description,lastupdate --hbase-create-table --hbase-table test --hbase-row-key id --column-family info
+
+#oracle向hbase插入数据(两个列==>行键)
+sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 1 --table test --columns id,name,description,lastupdate --hbase-create-table --hbase-table test --hbase-row-key id,name --column-family info
+
+#oracle向hbase插入数据(采用--query)(注意：$CONDITIONS必须要有；--hbase-row-key后边必须大写)
+sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 1 --query 'select id,name,description,lastupdate from test where $CONDITIONS' --hbase-create-table --hbase-table test --hbase-row-key ID,NAME --column-family info
+
+#oracle向hbase插入数据(采用--query)(注意：如果--query后面使用的是双引号，那么需要在$CONDITIONS前加上\即\$CONDITIONS)
+sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 1 --query "select xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from sehr_xman_ehr_0 t where xman_id='1f3e91db-eb63-421c-afa2-4aa382ed6cb8' and \$CONDITIONS" --hbase-create-table --hbase-table sehr_xman_ehr_0 --hbase-row-key XMAN_ID,EVENT --column-family info
+，
+#oracle向hbase插入数据(采用--query)(注意：多个map时--split-by必须要加(目前只支持BigDecimal,Boolean,Date,Float,Integer类型，特别注意不支持varchar))
+sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 4 --query "select xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from sehr_xman_ehr_0 t where xman_id='1f3e91db-eb63-421c-afa2-4aa382ed6cb8' and \$CONDITIONS" --split-by serial --hbase-create-table --hbase-table sehr_xman_ehr_0 --hbase-row-key XMAN_ID,EVENT --column-family info
+
+###demo##########################################################################################################
+#将oracle中表SEHR_XMAN_EHR_D数据据导入hbase表SEHR_XMAN_EHR_D
+sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 1 --query 'select xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from SEHR_XMAN_EHR_D t where $CONDITIONS' --hbase-create-table --hbase-table SEHR_XMAN_EHR_D --hbase-row-key XMAN_ID,EVENT --column-family info
+
+#多个map时用rownum做分割，但是大字段没导进去？？
+sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 6 --query 'select * from (select rownum as id,xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from sehr_xman_ehr_0 t) b where $CONDITIONS' --split-by id --hbase-create-table --hbase-table sehr_xman_ehr_0_sqoop --hbase-row-key XMAN_ID,EVENT --column-family info
+
+
+
+
+
+
+###Sqoop介绍##########################################################################################################
+一、
+        Sqoop除了能够将数据从关系型数据库导入到HDFS和Hive中，还能够导入到HBase表中。
+       --hbase-table：通过指定--hbase-table参数值，指明将数据导入到HBase表中，而不是HDFS上的一个目录。输入表中的每一行将会被转换成一个HBase Put操作的输出表的一行。
+       --hbase-row-key：你可以使用--hbase-row-key参数，手动的指定row key。默认的情况下，Sqoop会将split-by 列作为HBase rowkey列。如果没有指定split-by值，它将会试图识别关系表的关键字。
+
+       如果源表是组合关键字，--hbase-row-key 参数后面值是用逗号分隔的组合关键字属性的列表，在这样种情况下，通过合并组合关键字属性的值来产生HBase的Row key，每个值之间使用下划线分隔开来。
+
+       --column-family：必须指定--column-family参数，每一个输出列都会被放到同一个family列族中。
+
+      --hbase-create-table：如果HBase中的目标表和列族不存在，如果你使用该参数，Sqoop在运行任务的时候会根据HBase的默认配置，首先创建目标表和列族。
+
+       注意一：当源表中是组合关键字的时候，必须手动指定--hbase-row-key参数，Sqoop才能将数据导入到HBase中，否则不行。
+       注意二：如果HBase中的目标表和列族不存在，如果没加--hbase-create-table参数，Sqoop job将会报错误退出运行。所以你在将数据从源表导入到HBase之前，需要首先在HBase中创建目标表和其对应的列族。
+      Sqoop目前会序列化所有的字段值，将值转换为字符串表示，然后向HBase中插入UTF-8编码的字符串值的二进制值。
+
+二、HBase相关参数说明：
+  --hbase-table：hbase中接收数据的表名
+  --hbase-create-table：如果指定的接收数据表在hbase中不存在，则新建表
+  --column-family：列族名称，所有源表的字段都进入该列族
+  --hbase-row-key：如果不指定则采用源表的key作为hbase的row key。可以指定一个字段作为row key，或者指定组合行键，当指定组合行键时，用双引号包含多个字段，各字段用逗号分隔
+  -D sqoop.hbase.add.row.key ：是否将rowkey相关字段写入列族中，默认为false，默认情况下你将在列族中看不到任何row key中的字段。注意，该参数必须放在import之后。
+
+
+###测试##########################################################################################################
+
+sqoop list-tables --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr
+
+
+sqoop import --connect jdbc:mysql://qdm154746529.my3w.com:3306/qdm154746529_db --username qdm154746529 --password 552620kg  --table Product --columns 'proId, proTypeId, proName'
+
+sqoop import --connect jdbc:mysql://192.168.1.10:3306/itcast --username root --password 123  --table trade_detail --target-dir '/sqoop/td' --fields-terminated-by '\t'
+
+sqoop import --connect jdbc:mysql://qdm154746529.my3w.com:3306/qdm154746529_db --username qdm154746529 --password 552620jg  --table Product --target-dir '/sqoop/td' --fields-terminated-by '\t'
+
+sqoop import --connect jdbc:mysql://192.168.1.10:3306/itcast --username root --password 123  --table trade_detail --target-dir '/sqoop/td1' --fields-terminated-by '\t' -m 2
+
+sqoop import --connect jdbc:mysql://qdm154746529.my3w.com:3306/qdm154746529_db --username qdm154746529 --password 552620jg  --table Product --target-dir '/sqoop/td2' --fields-terminated-by '\t' -m 1
+
+
+sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 1 --table A_JZX --columns ID_NO,NAME --hbase-create-table --hbase-table test --hbase-row-key ID_NO --column-family info
+
+
+sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 1 --table SEHR_XMAN_EHR_D --columns xman_id,event,catalog_code,serial,content,xml,compression,encryption,status,version,title,commit_time,istemp --hbase-create-table --hbase-table SEHR_XMAN_EHR_D --hbase-row-key xman_id --column-family info
+
+
+create 'tb4','ID_NO','info'
+
+create 'SEHR_XMAN_EHR_D','xman_id','info'
+
+
+
+sqoop import --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 1 --query 'SELECT xman_id,event,catalog_code,serial,content,compression,encryption,status,version,title,commit_time,istemp FROM SEHR_XMAN_EHR_D  where xman_id=098a01b6-957d-409e-897a-70d7911b6843 AND $CONDITIONS' --split-by SEHR_XMAN_EHR_D.xman_id --target-dir '/sqoop/SEHR_XMAN_EHR_D2'
+
+
+
+
+
+sqoop export --connect jdbc:mysql://qdm154746529.my3w.com:3306/qdm154746529_db --username qdm154746529 --password 552620jg --export-dir '/input/hly-temp-normal.txt' --table hly_temp_normal -m 1 --fields-termianted-by ' '
+
+
+
+

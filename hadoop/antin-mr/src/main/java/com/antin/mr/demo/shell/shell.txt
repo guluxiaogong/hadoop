@@ -1,0 +1,79 @@
+#!/bin/bash
+COMMAND=$1
+EXTRA=$2
+HADOOP_PATH=/home/hadoop/hadoop-1.0.3
+HBASE_PATH=/home/hadoop/hbase-0.94.1-security
+ZK_PATH=/home/hadoop/zookeeper-3.4.3
+HOSTS="Master2 Slave21 Slave22"
+
+#------------- restart ----------------
+if [ "$COMMAND" = "restart-all" ]; then
+       for host in$HOSTS;do
+       ssh $host"$ZK_PATH/bin/zkServer.sh stop"
+       done
+       $HBASE_PATH/bin/stop-hbase.sh
+       $HADOOP_PATH/bin/stop-all.sh
+       for host in$HOSTS;do
+       ssh $host"$ZK_PATH/bin/zkServer.sh start"
+       done
+       $HADOOP_PATH/bin/start-all.sh
+       $HBASE_PATH/bin/start-hbase.sh
+
+elif [ "$COMMAND" = "restart-hadoop" ];then
+      $HBASE_PATH/bin/stop-hbase.sh
+       $HADOOP_PATH/bin/stop-all.sh
+       $HADOOP_PATH/bin/start-all.sh
+       $HBASE_PATH/bin/start-hbase.sh
+elif [ "$COMMAND" = "restart-hbase" ];then
+       $HADOOP_PATH/bin/stop-all.sh
+       $HADOOP_PATH/bin/start-all.sh
+#------------- start ----------------
+elif [ "$COMMAND" = "start-all" ]; then
+       for host in$HOSTS;do
+       ssh $host"$ZK_PATH/bin/zkServer.sh start"
+       echo "#####start $host zkServer succeed! #####"
+       done
+       $HADOOP_PATH/bin/start-all.sh
+       $HBASE_PATH/bin/start-hbase.sh
+elif [ "$COMMAND" = "start-hadoop" ];then
+       $HADOOP_PATH/bin/start-all.sh
+elif [ "$COMMAND" = "start-hbase" ];then
+       $HBASE_PATH/bin/start-hbase.sh
+elif [ "$COMMAND" = "start-zookeeper" ];then
+       for host in$HOSTS;do
+       ssh $host"$ZK_PATH/bin/zkServer.sh start"
+       echo "#####start $host zkServer succeed! #####"
+       done
+#------------- stop ----------------
+elif [ "$COMMAND" = "stop-all" ]; then
+       $HBASE_PATH/bin/stop-hbase.sh
+       $HADOOP_PATH/bin/stop-all.sh
+       for hostin $HOSTS;do
+       ssh $host"$ZK_PATH/bin/zkServer.sh stop"
+       done
+elif [ "$COMMAND" = "stop-hadoop"]; then
+       $HADOOP_PATH/bin/stop-all.sh
+elif [ "$COMMAND" = "stop-hbase"]; then
+       $HBASE_PATH/bin/stop-hbase.sh
+elif [ "$COMMAND" = "stop-hbase"]; then
+       $HBASE_PATH/bin/stop-hbase.sh
+elif [ "$COMMAND" ="stop-zookeeper" ]; then
+       echo"### closing hbase service! ###"
+       $HBASE_PATH/bin/stop-hbase.sh
+       echo"### closing zookeeper service! ###"
+       for hostin $HOSTS;do
+       ssh $host"$ZK_PATH/bin/zkServer.sh stop"
+       done
+#------------- other command -----------
+elif [ "$COMMAND" = "zookeeper" ];then
+       for hostin $HOSTS;do
+       echo"##### result in $host ! #####"
+       ssh $host"$ZK_PATH/bin/zkServer.sh $EXTRA"
+       done
+#------------- help ----------------
+else
+       echo"---------- command list ---------------"
+       echo"restart-all | restart-hadoop | restart-hbase"
+       echo"start-all   | start-hadoop   | start-hbase"
+       echo"stop-all    | stop-hadoop    | stop-hbase"
+fi

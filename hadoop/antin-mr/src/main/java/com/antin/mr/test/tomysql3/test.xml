@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ClinicalDocument>
+    <!--固定值-->
+    <version code="2.0.0.0" date="2009-12-01">根据卫生部标准第一次修订</version>
+    <!--固定值。codeSystem是code的编码体系，可以是ISO的对象标识符OID(一组数字)、国家标准(以GB开头)、
+        卫生部健康档案数据标准(以CV开头)、本系统标准(以STD开头)或其它医学标准-->
+    <ehr code="健康类别代码(字典STD_EHR)：固定值0101" codeSystem="STD_EHR">门诊基本诊疗信息</ehr>
+    <!--可根据需要自定义报告标题-->
+    <title>门诊基本诊疗信息</title>
+    <!--医疗机构编号使用卫生局的标准编码-->
+    <org code="医疗机构编号(字典STD_HEALTH_ORG)" codeSystem="STD_HEALTH_ORG">医疗机构名称</org>
+    <!--报告单号用于唯一标识该文档，事件号用于标识一次诊疗过程，同过程的所有文档事件号相同-->
+    <id extension="报告单号" eventno="事件号"></id>
+    <!--文档创建时间，格式是“yyyy-MM-dd hh24:mi:ss”，
+    以下未特殊说明的“日期”均使用“yyyy-MM-dd”格式，如2009-12-01
+    未特殊说明的“日期时间”均使用“yyyy-MM-dd hh24:mi:ss”格式，如2009-12-01 16:00:00-->
+    <effectiveTime value="文档创建时间"/>
+    <recordTarget>
+        <patient>
+            <id extension="市民健康卡号"></id>
+            <name>姓名</name>
+            <sex code="性别代码(字典STD_SEX)" codeSystem="GB/T2261.1-2003">性别名称</sex>
+            <birthDate>出生日期</birthDate>
+            <marriage code="婚姻状态代码(字典STD_MARRIAGE)" codeSystem="GB/T 2261.2-2003">婚姻状态</marriage>
+        </patient>
+    </recordTarget>
+    <component>
+        <section>
+            <!--档案子类别，用于类别的扩展，code子类别编码；displayName名称。当前为固定值-->
+            <code code="common" codeSystem="" displayName="门诊基本诊疗信息"/>
+            <entry>
+                <onsetTime>发病日期时间</onsetTime>
+                <treatTime>就诊日期时间</treatTime>
+                <diagnosisDate>主诊断日期</diagnosisDate>
+                <reg>
+                    <value>门诊挂号号</value>
+                    <type code="挂号类别代码(字典STD_REG_TYPE)" codeSystem="STD_REG_TYPE">挂号类别名称</type>
+                </reg>
+                <sec>
+                    <value>保险号</value>
+                    <type code="保险类别代码(字典STD_SEC_TYPE)" codeSystem="STD_SEC_TYPE">保险类别名称</type>
+                </sec>
+                <dept code="科室代码(字典STD_DEPT)" codeSystem="GB/T 17538-1998">科室名称</dept>
+                <doctor>
+                    <id extension="医生编码"/>
+                    <name>医生名称</name>
+                    <title code="职称代码(字典STD_TECH_TITLE)" codeSystem="GB/T 8561-1988">职称名称</title>
+                </doctor>
+                <symptom>
+                    <!--门诊症状体征子项：开始(多项时重复此节点)-->
+                    <item code="症状代码(字典STD_OUTPATIENT_SYMPTOM)" codeSystem="CV5101.27">门诊症状-名称</item>
+                    <!--门诊症状体征子项：结束-->
+                </symptom>
+                <diagnosis>
+                    <!--门诊诊断子项：开始(多项时重复此节点)-->
+                    <item>
+                        <icd code="诊断icd10(字典STD_ICD)" codeSystem="ICD-10">疾病诊断名称</icd>
+                        <result code="诊疗结果代码(字典STD_DIAGNOSIS_RESULT)" codeSystem="CV5501.11">诊疗结果</result>
+                        <prop code="诊断性质代码(字典STD_DIAGNOSIS_PROP)" codeSystem="STD_DIAGNOSIS_PROP">诊断性质</prop>
+                    </item>
+                    <!--门诊诊断子项：结束-->
+                </diagnosis>
+            </entry>
+        </section>
+    </component>
+</ClinicalDocument>
