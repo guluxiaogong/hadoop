@@ -34,7 +34,6 @@ public class SehrXmanEhrModel implements Writable, DBWritable {
 
     @Override
     public void readFields(DataInput dataInput) throws IOException {
-        dataInput.readUTF();
         this.id = dataInput.readLong();
         this.xmanId = dataInput.readUTF();
         this.event = dataInput.readUTF();

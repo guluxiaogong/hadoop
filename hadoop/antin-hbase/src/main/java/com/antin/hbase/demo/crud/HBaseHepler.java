@@ -34,7 +34,7 @@ public class HBaseHepler {
              */
             String tableName = "student";//表名
             String[] columnFamilys = {"info", "course"};//列族
-            createTable(tableName, columnFamilys);
+ //           createTable(tableName, columnFamilys);
 
             /*
              *第二步：向数据表的添加数据

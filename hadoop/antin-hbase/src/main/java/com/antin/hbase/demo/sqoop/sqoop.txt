@@ -16,11 +16,25 @@ sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --u
 sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 4 --query "select xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from sehr_xman_ehr_0 t where xman_id='1f3e91db-eb63-421c-afa2-4aa382ed6cb8' and \$CONDITIONS" --split-by serial --hbase-create-table --hbase-table sehr_xman_ehr_0 --hbase-row-key XMAN_ID,EVENT --column-family info
 
 ###demo##########################################################################################################
+
 #将oracle中表SEHR_XMAN_EHR_D数据据导入hbase表SEHR_XMAN_EHR_D
 sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 1 --query 'select xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from SEHR_XMAN_EHR_D t where $CONDITIONS' --hbase-create-table --hbase-table SEHR_XMAN_EHR_D --hbase-row-key XMAN_ID,EVENT --column-family info
 
-#多个map时，只会抽一个map数据，？？
-sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 6 --query 'select rownum,xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from SEHR_XMAN_EHR_D t where $CONDITIONS' --split-by rownum --hbase-create-table --hbase-table SEHR_XMAN_EHR_D_TEST --hbase-row-key XMAN_ID,EVENT --column-family info
+#多个map时，只会抽一个map数据，？？解决==>sql写法,map时用rownum做分割   大字段没办法直接导进hbase
+sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 6 --query 'select * from (select rownum as id,xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from sehr_xman_ehr_0 t) b where $CONDITIONS' --split-by id --hbase-create-table --hbase-table SEHR_XMAN_EHR_D_TEST --hbase-row-key XMAN_ID,EVENT --column-family info
+
+#多个map时，在字段可以直接导入hdfs
+sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 6 --query 'select * from (select rownum as id,xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from sehr_xman_ehr_0 t) b where $CONDITIONS' --split-by id --target-dir '/sqoop/td' --fields-terminated-by '\t'
+
+
+
+
+
+
+
+
+
+
 
 
 

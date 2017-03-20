@@ -31,7 +31,7 @@ public class DBImportHbase {
         public void map(LongWritable key, SehrXmanEhrModel sxem, Context context)
                 throws IOException, InterruptedException {
 
-            byte[] rowkeyByte = Bytes.toBytes(sxem.getXmanId() + sxem.getEvent());
+            byte[] rowkeyByte = Bytes.toBytes(sxem.getXmanId() + "=||=" + sxem.getEvent());
             ImmutableBytesWritable rowkey = new ImmutableBytesWritable(rowkeyByte);
 
             String[] qualifiers = {"catalog_code", "serial", "content", "xml", "compression", "encryption", "status", "version", "title", "commit_time", "istemp"};
@@ -90,6 +90,12 @@ public class DBImportHbase {
 
     //export HADOOP_CLASSPATH="${HADOOP_CLASSPATH}:/hadoop-lib/ojdbc6.jar"
     public static void main(String[] args) throws Exception {
+        String tableName = "sehr_xman_ehr_test";
+        int maps = 1;
+        if (args != null && args.length > 1) {
+            tableName = args[0];
+            maps = Integer.parseInt(args[1]);
+        }
 
         Configuration conf = HBaseConfiguration.create();
 
@@ -100,7 +106,7 @@ public class DBImportHbase {
 //        conf.set("dfs.namenode.rpc-address.cluster1.zoe02", "zoe02:9000");
 //        conf.set("fs.client.failover.proxy.provider.cluster1", "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider");
 
-        conf.setInt("mapreduce.job.maps", 10);
+        conf.setInt("mapreduce.job.maps", maps);
         conf.set("mapreduce.jdbc.input.orderby", "id");
 
         DBConfiguration.configureDB(conf, "oracle.jdbc.driver.OracleDriver", "jdbc:oracle:thin:@192.168.0.91:1521:xmhealth", "sehr", "sehr");
@@ -119,17 +125,17 @@ public class DBImportHbase {
 
         //job.setNumReduceTasks(2);
 
-        Path output = new Path("hdfs://zoe01:9000/sehr_xman_ehr_d");//hdfs://zoe01:9000要写，否则报错java.net.UnknownHostException: cluster1
+        Path output = new Path("hdfs://zoe01:9000/" + tableName);//hdfs://zoe01:9000要写，否则报错java.net.UnknownHostException: cluster1
         FileOutputFormat.setOutputPath(job, output);
 
         //job.setOutputFormatClass(HFileOutputFormat.class);//and $CONDITIONS
 
-        DataDrivenDBInputFormat.setInput(job, SehrXmanEhrModel.class, "select * from (select rownum as id,xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from sehr_xman_ehr_d t) where $CONDITIONS", "select MIN(t.id), MAX(t.id) from (select rownum as id from sehr_xman_ehr_d) t");
+        DataDrivenDBInputFormat.setInput(job, SehrXmanEhrModel.class, "select * from (select rownum as id,xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from " + tableName + " t) where $CONDITIONS", "select MIN(t.id), MAX(t.id) from (select rownum as id from " + tableName + ") t");
         //OracleDataDrivenDBInputFormat.setInput(job, SehrXmanEhrModel.class, "select xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from sehr_xman_ehr_0 t where $CONDITIONS", "select MIN(t.commit_time), MAX(t.commit_time) from sehr_xman_ehr_0 t");
 
         //job.setOutputFormatClass(HFileOutputFormat.class);
         // 自动设置partitioner和reduce
-        HTable hTable = new HTable(conf, "sehr_xman_ehr_d");
+        HTable hTable = new HTable(conf, tableName);
         HFileOutputFormat.configureIncrementalLoad(job, hTable);
         //HFileOutputFormat2.configureIncrementalLoadMap(job,hTable);
 

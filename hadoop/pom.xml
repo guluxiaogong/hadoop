@@ -12,6 +12,7 @@
         <module>antin-hbase</module>
         <module>antin-mr</module>
         <module>antin-hdfs</module>
+        <module>antin-work</module>
     </modules>
     <dependencyManagement>
         <dependencies>
