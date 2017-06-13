@@ -82,7 +82,7 @@ public class WeblogMain {
         //设置Reducer相关属性
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(NullWritable.class);
-        FileOutputFormat.setOutputPath(job, new Path(resourcePath+"output"));
+        FileOutputFormat.setOutputPath(job, new Path(resourcePath + "output2"));
         //FileOutputFormat.setOutputPath(job, new Path("hdfs://zoe01:9000/output/aa"));
         //FileOutputFormat.setOutputPath(job, new Path("hdfs:/cluster1/output/aa2"));
         job.setNumReduceTasks(0);

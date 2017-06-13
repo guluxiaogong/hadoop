@@ -20,11 +20,12 @@ sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --u
 #将oracle中表SEHR_XMAN_EHR_D数据据导入hbase表SEHR_XMAN_EHR_D
 sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 1 --query 'select xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from SEHR_XMAN_EHR_D t where $CONDITIONS' --hbase-create-table --hbase-table SEHR_XMAN_EHR_D --hbase-row-key XMAN_ID,EVENT --column-family info
 
-#多个map时，只会抽一个map数据，？？解决==>sql写法,map时用rownum做分割   大字段没办法直接导进hbase
-sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 6 --query 'select * from (select rownum as id,xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from sehr_xman_ehr_0 t) b where $CONDITIONS' --split-by id --hbase-create-table --hbase-table SEHR_XMAN_EHR_D_TEST --hbase-row-key XMAN_ID,EVENT --column-family info
+#问：多个map时，只会抽一个map数据？？解决==>sql写法,map时用rownum做分割； 问：大字段没办法直接导进hbase，解决:加参数--map-column-java XML=String和 --map-column-java content=String
+#问：只能一个字段做主键，两个会报错
+sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 6 --query 'select * from (select rownum as id,xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from sehr_xman_ehr_0 t) b where $CONDITIONS' --split-by id --hbase-create-table --hbase-table SEHR_XMAN_EHR_0_TEST --hbase-row-key XMAN_ID,EVENT --column-family info --map-column-java content=String
 
 #多个map时，在字段可以直接导入hdfs
-sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 6 --query 'select * from (select rownum as id,xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from sehr_xman_ehr_0 t) b where $CONDITIONS' --split-by id --target-dir '/sqoop/td' --fields-terminated-by '\t'
+sqoop import --append --connect jdbc:oracle:thin:@192.168.0.91:1521:xmhealth --username sehr --password sehr --m 6 --query 'select * from (select rownum as id,xman_id,event,catalog_code,serial,content,t.xml.getclobval() xml,compression,encryption,status,version,title,commit_time,istemp from sehr_xman_ehr_0 t) b where $CONDITIONS' --split-by id --target-dir '/sqoop/td2' --fields-terminated-by '\t'
 
 
 
